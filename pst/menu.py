@@ -1,3 +1,5 @@
+from __future__ import annotations
+import typing as t
 
 import sys
 import traceback as tb
@@ -17,6 +19,8 @@ class BaseFrame(w.Frame):
             title=title
         )
 
+        self.set_theme("monochrome") # from config
+
 
 
 class DirectoryFrame(BaseFrame):
@@ -26,7 +30,8 @@ class DirectoryFrame(BaseFrame):
         screen: Screen, 
         scene_options: list[tuple[str, str]], 
         title: str = "Directory",
-        description: str = None
+        label: t.Optional[str] = None,
+        description: t.Optional[str] = None
         ) -> None:
         """Frame that lists and navigates a directory
 
@@ -46,9 +51,11 @@ class DirectoryFrame(BaseFrame):
             
         self.add_layout(self.layout)
 
-        self.layout.add_widget(w.Label("Options"), 0)
-        self.layout.add_widget(w.Divider(), 0)
-        self.layout.add_widget(w.ListBox(
+        if label is not None:
+            self.layout.add_widget(w.Label(label), 0)
+            self.layout.add_widget(w.Divider(), 0)
+        
+        self._directory = self.layout.add_widget(w.ListBox(
             w.Widget.FILL_FRAME,
             scene_options,
             name="directory"
@@ -78,7 +85,35 @@ class DirectoryFrame(BaseFrame):
         Raises:
             NextScene: Moves to next scene
         """
-        raise NextScene(self.data["directory"])
+        raise NextScene(self._directory.value)
+
+
+class ListFrame(BaseFrame):
+    pass
+
+
+class DictFrame(BaseFrame):
+
+    def __init__(
+            self,
+            screen: Screen,
+            values: dict[t.Any, t.Any],
+            title: str = "Dictionary"
+    ) -> None:
+        super(DictFrame, self).__init__(screen, title)
+
+        self._values = values
+
+        self._dict_layout = w.Layout([100], fill_frame=True)
+        self.add_layout(self._dict_layout)
+
+        for key in self._values:
+            temp = self._dict_layout.add_widget(
+                w.Text(str(key),key)
+            )
+            temp.value = self._values[key]
+        
+        self.fix()
 
 
 
@@ -98,6 +133,8 @@ class ExceptionFrame(BaseFrame):
         """
         super(ExceptionFrame, self).__init__(screen, f"ERROR: [{exception.__class__.__name__}]")
         
+        # self._return_scene = return_scene
+
         self._exception = exception
         self._traceback = exception.__traceback__
         self._traceback_str = tb.format_exception(self._exception)
@@ -121,16 +158,16 @@ class ExceptionFrame(BaseFrame):
         
         error.add_widget(w.Divider())
         
-        buttons = w.Layout([1,1,1])
+        buttons = w.Layout([1,1,1,1])
         self.add_layout(buttons)
         
-        buttons.add_widget(w.Button("Return to Main", self._return), 0)
-        buttons.add_widget(w.Button("Trace", self._trace), 1)
-        buttons.add_widget(w.Button("Close", self._close), 2)
+        buttons.add_widget(w.Button("Return to Main", self._return_main), 1)
+        buttons.add_widget(w.Button("Trace", self._trace), 2)
+        buttons.add_widget(w.Button("Close", self._close), 3)
         
         self.fix()
-        
-    def _return(self):
+
+    def _return_main(self):
         """Returns to PST terminal application
 
         Raises:

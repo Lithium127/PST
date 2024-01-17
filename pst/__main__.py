@@ -12,7 +12,7 @@ from asciimatics.effects import Julia, Print, Matrix
 from asciimatics.renderers import FigletText
 from asciimatics import constants as C
 
-from menu import DirectoryFrame, ExceptionFrame
+from menu import DirectoryFrame, ExceptionFrame, DictFrame
 
 
 
@@ -33,9 +33,14 @@ def error_handling_views(screen: Screen, exception: Exception, scene: Scene):
     exception_view = ExceptionFrame(screen, exception)
     exception_view.set_theme("green")
     
+    exception_views = []
+    if False:
+        exception_views.append(Matrix(screen))
+    exception_views.append(exception_view)
+
     scenes = [
-        Scene([exception_view, Print(screen, warning, warning_y, warning_x, transparent=False, attr=C.A_BOLD, colour=C.COLOUR_GREEN)], 18),
-        Scene([Matrix(screen), exception_view], -1, "exception_handler")
+        Scene([exception_view, Print(screen, warning, warning_y, warning_x, transparent=False, attr=C.A_BOLD, colour=C.COLOUR_GREEN, speed=10)], 18),
+        Scene(exception_views, -1, "exception_handler")
     ]
     
     screen.play(
@@ -78,13 +83,27 @@ def start_terminal_menu(screen: Screen, scene: Scene) -> None:
             [DirectoryFrame(
                 screen, 
                 [
-                    ("View Profile Database", "")
+                    ("View Profile Database", "db_view"),
+                    ("Configure Application", "config"),
+                    ("Dict", "dict")
                 ],
-                "PST Main Directory",
-                "The PST project is a system designed for tracking profiles and managing information regarding personel"
+                title = "PST Main Directory",
+                label = "Options",
+                description = "The PST project is a system designed for tracking profiles and managing information regarding personel"
             )], 
             -1, 
             name="main"
+        ),
+        Scene(
+            [DictFrame(
+                screen,
+                {
+                    "test":"test",
+                    "test":"test2"
+                }
+            )],
+            -1,
+            name="dict"
         )
     ]
 
