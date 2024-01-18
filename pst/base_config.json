@@ -1,0 +1,6 @@
+{
+  "optimised_error_handler": true,
+  "test_config": "TESTING",
+  "main_frame_name": "main",
+  "base_frame_theme": "monochrome"
+}

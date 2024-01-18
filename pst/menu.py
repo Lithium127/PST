@@ -1,3 +1,5 @@
+from __future__ import annotations
+import typing as t
 
 import sys
 import traceback as tb
@@ -6,6 +8,7 @@ from asciimatics.screen import Screen
 from asciimatics import widgets as w
 from asciimatics.exceptions import NextScene, StopApplication
 
+from config import CONFIG, Config
 
 class BaseFrame(w.Frame):
     def __init__(self, screen: Screen, title = None, *, height = None, width = None, hover_focus = True) -> None:
@@ -16,6 +19,8 @@ class BaseFrame(w.Frame):
             hover_focus=hover_focus,
             title=title
         )
+        
+        self.set_theme(CONFIG.get("base_frame_theme", "default"))
 
 
 
@@ -48,7 +53,7 @@ class DirectoryFrame(BaseFrame):
 
         self.layout.add_widget(w.Label("Options"), 0)
         self.layout.add_widget(w.Divider(), 0)
-        self.layout.add_widget(w.ListBox(
+        self._directory = self.layout.add_widget(w.ListBox(
             w.Widget.FILL_FRAME,
             scene_options,
             name="directory"
@@ -78,7 +83,7 @@ class DirectoryFrame(BaseFrame):
         Raises:
             NextScene: Moves to next scene
         """
-        raise NextScene(self.data["directory"])
+        raise NextScene(self._directory.value)
 
 
 
@@ -150,3 +155,65 @@ class ExceptionFrame(BaseFrame):
         """Force stops application and exits with code 0"""
         sys.exit(0)
         
+
+
+class ConfigFrame(BaseFrame):
+    
+    type_reference_dict: dict[type, t.Any] = {
+        bool : lambda key: w.CheckBox(
+            "Value",
+            key,
+            name=key
+        ),
+        str : lambda key: w.Text(
+            key, 
+            name=key
+        ),
+    }
+    
+    def __init__(self, screen: Screen, config: Config):
+        super(ConfigFrame, self).__init__(screen, config.name)
+        
+        self._config = config
+        
+        self._current_config: dict[str, w.Widget] = {}
+        
+        self.key_list = w.Layout([100], fill_frame=True)
+        
+        self.add_layout(self.key_list)
+        
+        self.key_list.add_widget(w.Label(f"Config keys for   [ {self._config.name} ]"))
+        self.key_list.add_widget(w.Divider())
+        
+        
+        for key in self._config.keys:
+            value = self._config.get(key)
+            try:
+                widget = self.type_reference_dict[type(value)](key)
+                widget.value = value
+                
+                self._current_config[key] = widget
+                
+                self.key_list.add_widget(widget)
+            except KeyError:
+                self.key_list.add_widget(w.Label(f"[ERROR]  {key} : {type(self._config.get(key))}"))
+        
+        
+        
+        self.buttons = w.Layout([1,1,1,1])
+        self.add_layout(self.buttons)
+        
+        self.buttons.add_widget(w.Button("Back", self._back), 0)
+        self.buttons.add_widget(w.Button("Save", self._save), 1)
+        
+        self.fix()
+    
+    def _save(self) -> None:
+        data = {}
+        for key in self._current_config.keys():
+            data[key] = self._current_config[key].value
+            
+        self._config.update_dict(data)
+    
+    def _back(self) -> None:
+        raise NextScene(CONFIG.get("main_frame_name","main"))

@@ -6,13 +6,15 @@ import typing as t
 
 from asciimatics.widgets import Frame
 from asciimatics.screen import Screen
-from asciimatics.exceptions import ResizeScreenError
+from asciimatics.exceptions import ResizeScreenError, StopApplication
+from asciimatics.event import KeyboardEvent
 from asciimatics.scene import Scene
 from asciimatics.effects import Julia, Print, Matrix
 from asciimatics.renderers import FigletText
 from asciimatics import constants as C
 
-from menu import DirectoryFrame, ExceptionFrame
+from menu import DirectoryFrame, ExceptionFrame, ConfigFrame
+from config import CONFIG
 
 
 
@@ -33,9 +35,14 @@ def error_handling_views(screen: Screen, exception: Exception, scene: Scene):
     exception_view = ExceptionFrame(screen, exception)
     exception_view.set_theme("green")
     
+    exception_interaction = []
+    if not CONFIG.get("optimised_error_handler", True):
+        exception_interaction.append(Matrix(screen))
+    exception_interaction.append(exception_view)
+    
     scenes = [
         Scene([exception_view, Print(screen, warning, warning_y, warning_x, transparent=False, attr=C.A_BOLD, colour=C.COLOUR_GREEN)], 18),
-        Scene([Matrix(screen), exception_view], -1, "exception_handler")
+        Scene(exception_interaction, -1, "exception_handler")
     ]
     
     screen.play(
@@ -62,7 +69,17 @@ def error_handler(exception: Exception):
             last_scene = e_.scene
 
 
-
+def global_shortcuts(event):
+    if isinstance(event, KeyboardEvent):
+        c = event.key_code
+        # Stop on ctrl+q or ctrl+x
+        if c in (17, 24):
+            raise StopApplication("User terminated app")
+        if c == 5:
+            raise Exception("User Terminated app")
+        
+        
+        
 
 
 def start_terminal_menu(screen: Screen, scene: Scene) -> None:
@@ -78,27 +95,33 @@ def start_terminal_menu(screen: Screen, scene: Scene) -> None:
             [DirectoryFrame(
                 screen, 
                 [
-                    ("View Profile Database", "")
+                    ("View Profile Database", ""),
+                    ("System Config", "system_config")
                 ],
                 "PST Main Directory",
                 "The PST project is a system designed for tracking profiles and managing information regarding personel"
             )], 
             -1, 
             name="main"
+        ),
+        Scene(
+            [ConfigFrame(screen, CONFIG)],
+            -1,
+            name="system_config"
         )
     ]
 
     screen.play(
         scenes,
         stop_on_resize=True,
-        start_scene = scene
+        start_scene = scene,
+        unhandled_input=global_shortcuts
     )
     
 
 
 def main() -> None:
-    """Starts PST terminal application
-    """
+    """Starts PST terminal application"""
     last_scene: t.Optional[Scene] = None
 
     while True:
@@ -114,5 +137,10 @@ def main() -> None:
 
 
 if __name__ == "__main__":
+    # Startup tasks
+    
     # Run target
     main()
+    
+    # Closing Tasks
+    
