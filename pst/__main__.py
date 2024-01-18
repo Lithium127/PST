@@ -98,8 +98,9 @@ def start_terminal_menu(screen: Screen, scene: Scene) -> None:
                     ("View Profile Database", ""),
                     ("System Config", "system_config")
                 ],
-                "PST Main Directory",
-                "The PST project is a system designed for tracking profiles and managing information regarding personel"
+                title = "PST Main Directory",
+                label = "Options",
+                description = "The PST project is a system designed for tracking profiles and managing information regarding personel"
             )], 
             -1, 
             name="main"

@@ -22,6 +22,8 @@ class BaseFrame(w.Frame):
         
         self.set_theme(CONFIG.get("base_frame_theme", "default"))
 
+        self.set_theme("monochrome") # from config
+
 
 
 class DirectoryFrame(BaseFrame):
@@ -31,7 +33,8 @@ class DirectoryFrame(BaseFrame):
         screen: Screen, 
         scene_options: list[tuple[str, str]], 
         title: str = "Directory",
-        description: str = None
+        label: t.Optional[str] = None,
+        description: t.Optional[str] = None
         ) -> None:
         """Frame that lists and navigates a directory
 
@@ -103,6 +106,8 @@ class ExceptionFrame(BaseFrame):
         """
         super(ExceptionFrame, self).__init__(screen, f"ERROR: [{exception.__class__.__name__}]")
         
+        # self._return_scene = return_scene
+
         self._exception = exception
         self._traceback = exception.__traceback__
         self._traceback_str = tb.format_exception(self._exception)
@@ -126,16 +131,16 @@ class ExceptionFrame(BaseFrame):
         
         error.add_widget(w.Divider())
         
-        buttons = w.Layout([1,1,1])
+        buttons = w.Layout([1,1,1,1])
         self.add_layout(buttons)
         
-        buttons.add_widget(w.Button("Return to Main", self._return), 0)
-        buttons.add_widget(w.Button("Trace", self._trace), 1)
-        buttons.add_widget(w.Button("Close", self._close), 2)
+        buttons.add_widget(w.Button("Return to Main", self._return_main), 1)
+        buttons.add_widget(w.Button("Trace", self._trace), 2)
+        buttons.add_widget(w.Button("Close", self._close), 3)
         
         self.fix()
-        
-    def _return(self):
+
+    def _return_main(self):
         """Returns to PST terminal application
 
         Raises:
